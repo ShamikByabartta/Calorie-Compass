@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Calorie Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Helvetica:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+            background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M.75 3.33L3 5.58L5.25 3.33L3 1.08L.75 3.33ZM3 4.67L4.5 3.17L3 1.67L1.5 3.17L3 4.67Z' fill='%2393c5fd'/%3E%3C/svg%3E");
+        }
+        .container {
+            max-width: 900px;
+        }
+        .font-helvetica {
+            font-family: 'Helvetica', sans-serif;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="w-full bg-indigo-500 p-6 shadow-md rounded-b-3xl">
+        <div class="container mx-auto flex items-center justify-between">
+            <!-- Calorie Compass Logo (SVG) -->
+            <div class="flex items-center space-x-2">
+                <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="#FFFFFF" stroke="#252525" stroke-width="4"/>
+                    <path d="M50 5 L50 20 L55 15 L50 5Z" fill="#252525"/>
+                    <path d="M50 95 L50 80 L45 85 L50 95Z" fill="#252525"/>
+                    <path d="M50 50 L80 50 L75 55 L50 50Z" fill="#252525"/>
+                    <path d="M50 50 L20 50 L25 45 L50 50Z" fill="#252525"/>
+                    <circle cx="50" cy="50" r="15" fill="#E84A5F"/>
+                    <circle cx="50" cy="50" r="10" fill="#252525"/>
+                    <circle cx="50" cy="50" r="5" fill="#FFFFFF"/>
+                </svg>
+            </div>
+            
+            <div class="flex flex-col items-center">
+                <h1 class="text-4xl font-bold text-white font-helvetica">Calorie Compass</h1>
+                <p class="text-sm text-white mt-2 font-poppins">Your daily guide to mindful eating</p>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button id="login-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all duration-200">Login</button>
+                <button id="signup-btn" class="bg-white text-indigo-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 transition-all duration-200">Sign Up</button>
+                <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-600 transition-all duration-200 hidden">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Wrapper -->
+    <main class="flex-1 flex items-center justify-center p-4">
+
+        <!-- Main App Page -->
+        <div id="main-app" class="container bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row gap-8">
+            <!-- Input & AI Response Section -->
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">AI Calorie Tracker</h1>
+                <p class="text-sm text-gray-500 mb-6">
+                    Enter your meal, and our AI will provide a nutritional breakdown. All entries are saved automatically.
+                </p>
+
+                <!-- Authentication Required Message (Unauthenticated) -->
+                <div id="auth-required-message" class="hidden bg-yellow-100 text-yellow-800 p-4 rounded-xl mb-6 border border-yellow-300">
+                    <p class="font-semibold">🔓 Feature Locked</p>
+                    <p class="text-sm">Please **Login** or **Create an account** to track your meals, save history, and generate meal plans.</p>
+                </div>
+
+                <!-- Email Verification Pending Message (Authenticated but Unverified) -->
+                <div id="verification-pending-message" class="hidden bg-red-100 text-red-800 p-4 rounded-xl mb-6 border border-red-300">
+                    <p class="font-semibold">⚠️ Verification Required</p>
+                    <p class="text-sm">Your account is not verified. Please check your email inbox and click the verification link to unlock all features.</p>
+                    <button id="resend-verification-btn" class="mt-3 bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-red-600 transition-colors duration-200">Resend Verification Email</button>
+                </div>
+
+
+                <!-- User ID Display -->
+                <div id="user-info" class="bg-blue-100 text-blue-800 text-xs font-semibold px-4 py-2 rounded-lg mb-6">
+                    <span id="user-id">Please log in or sign up to save data.</span>
+                </div>
+
+                <!-- Input Form -->
+                <div class="space-y-4">
+                    <div>
+                        <label for="food-input" class="block text-sm font-medium text-gray-700">What did you eat?</label>
+                        <input type="text" id="food-input" placeholder="e.g., Grilled chicken salad with dressing" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="image-input" class="text-sm font-medium text-gray-700">Or use a picture:</label>
+                        <input type="file" id="image-input" accept="image/*" class="text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-xl file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-indigo-50 file:text-indigo-700
+                            hover:file:bg-indigo-100 transition-colors duration-200" />
+                    </div>
+                    <!-- Submit button disabled state is controlled in JS based on verification -->
+                    <button id="submit-btn" class="w-full inline-flex justify-center rounded-xl border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 opacity-50 cursor-not-allowed">
+                        ✨ Analyze Meal
+                    </button>
+                </div>
+
+                <!-- AI Response Section -->
+                <div id="ai-response-container" class="mt-8 bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm transition-all duration-200">
+                    <p id="ai-response" class="text-gray-600 leading-relaxed italic">
+                        Your nutritional breakdown will appear here.
+                    </p>
+                    <div id="loading-indicator" class="hidden flex justify-center items-center mt-4">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-gray-500">Thinking...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meal Log Section -->
+            <div class="flex-1 mt-8 md:mt-0">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Meal History</h2>
+                <div class="space-y-4">
+                    <!-- Meal Plan Button disabled state is controlled in JS based on verification -->
+                    <button id="plan-btn" class="w-full inline-flex justify-center rounded-xl border border-transparent bg-green-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 opacity-50 cursor-not-allowed">
+                        ✨ Generate Meal Plan
+                    </button>
+                    <div id="meal-plan-response-container" class="bg-green-50 rounded-xl p-6 border border-green-200 shadow-sm hidden">
+                        <p id="meal-plan-response" class="text-gray-700 leading-relaxed"></p>
+                        <div id="plan-loading-indicator" class="hidden flex justify-center items-center mt-4">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-gray-500">Generating...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="meals-container" class="bg-gray-50 rounded-xl p-6 border border-gray-200 shadow-sm h-full max-h-[500px] overflow-y-auto mt-4">
+                    <ul id="meal-list" class="space-y-4">
+                        <li class="text-center text-gray-500 italic p-4 bg-white rounded-lg shadow-inner">
+                            Login to track and see your personalized meal history.
+                        </li>
+                    </ul>
+                    <div id="meals-loading-indicator" class="flex justify-center items-center p-4 hidden">
+                        <svg class="animate-spin h-6 w-6 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Page (Default shown until user authenticates) -->
+        <div id="login-page" class="container bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row gap-8 hidden">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">Login</h1>
+                <p class="text-sm text-gray-500 mb-6">
+                    Welcome back! Please enter your email and password to log in.
+                </p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="login-email" placeholder="you@example.com" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="login-password" placeholder="••••••••" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <button id="login-submit-btn" class="w-full inline-flex justify-center rounded-xl border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                        Login
+                    </button>
+                    <p class="text-center text-sm text-gray-500 mt-4">
+                        Don't have an account? <a href="#" id="go-to-signup" class="text-indigo-600 hover:text-indigo-800 font-semibold">Sign up</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sign Up Page -->
+        <div id="signup-page" class="container bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row gap-8 hidden">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">Sign Up</h1>
+                <p class="text-sm text-gray-500 mb-6">
+                    Create your free account to start tracking your meals.
+                </p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="signup-first-name" class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input type="text" id="signup-first-name" placeholder="John" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label for="signup-last-name" class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input type="text" id="signup-last-name" placeholder="Doe" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label for="signup-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="signup-email" placeholder="you@example.com" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label for="signup-password" class="block text-sm font-medium text-gray-700">Create Password</label>
+                        <input type="password" id="signup-password" placeholder="••••••••" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all duration-200">
+                        <p class="mt-1 text-xs text-gray-500">
+                            Must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character.
+                        </p>
+                    </div>
+                    <button id="signup-submit-btn" class="w-full inline-flex justify-center rounded-xl border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                        Sign Up
+                    </button>
+                    <p class="text-center text-sm text-gray-500 mt-4">
+                        Already have an account? <a href="#" id="go-to-login" class="text-indigo-600 hover:text-indigo-800 font-semibold">Login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    
+    <!-- Footer Section -->
+    <footer class="w-full bg-gray-800 rounded-t-3xl shadow-xl p-6 mt-8">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left text-sm text-gray-300 space-y-4 md:space-y-0">
+            <!-- Left Side - Feedback Link, Creator, and Version Info -->
+            <div class="flex flex-col items-center md:items-start space-y-4">
+                <a href="https://forms.google.com/your-form-link" target="_blank" class="block w-full">
+                    <button class="w-full inline-flex justify-center rounded-xl border border-transparent bg-gray-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200">
+                        Submit your Feedback on the app
+                    </button>
+                </a>
+                <div class="text-sm text-gray-300 space-y-1">
+                    <p>Made with ❤️ by Shamik in India</p>
+                    <p>v1.0.1</p>
+                </div>
+            </div>
+
+            <!-- Right Side - Policies and Copyright -->
+            <div class="flex flex-col items-center md:items-end space-y-2">
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-white transition-colors duration-200">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors duration-200">Terms of Service</a>
+                </div>
+                <p>&copy; 2025 AI Calorie Tracker, Shamik Byabartta</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom Modal for Alerts & Verification -->
+    <div id="custom-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div id="modal-content" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div id="modal-icon-container" class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <!-- Icon will be dynamically updated -->
+                            <svg id="modal-icon-error" class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.332 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Error</h3>
+                            <div class="mt-2">
+                                <p id="modal-message" class="text-sm text-gray-500"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="modal-close-btn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        OK
+                    </button>
+                    <!-- Special button for verification confirmation -->
+                    <button type="button" id="modal-verify-btn" class="hidden w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:mr-3 sm:w-auto sm:text-sm">
+                        I clicked the link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, reload } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, getDocs, setLogLevel, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Helper function to convert a file to a base64 string
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Firebase Initialization
+        let app, db, auth;
+        let userId = null;
+        let unsubscribeFromMeals = null;
+
+        // UI Elements
+        const mainAppPage = document.getElementById('main-app');
+        const loginPage = document.getElementById('login-page');
+        const signupPage = document.getElementById('signup-page');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const goToLoginLink = document.getElementById('go-to-login');
+        const goToSignupLink = document.getElementById('go-to-signup');
+
+        const foodInput = document.getElementById('food-input');
+        const imageInput = document.getElementById('image-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const aiResponse = document.getElementById('ai-response');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const mealList = document.getElementById('meal-list');
+        const userIdDisplay = document.getElementById('user-id');
+        const mealsLoadingIndicator = document.getElementById('meals-loading-indicator');
+        const planBtn = document.getElementById('plan-btn');
+        const mealPlanResponseContainer = document.getElementById('meal-plan-response-container');
+        const mealPlanResponse = document.getElementById('meal-plan-response');
+        const planLoadingIndicator = document.getElementById('plan-loading-indicator');
+        
+        // Auth State Messages
+        const authRequiredMessage = document.getElementById('auth-required-message');
+        const verificationPendingMessage = document.getElementById('verification-pending-message');
+        const resendVerificationBtn = document.getElementById('resend-verification-btn');
+
+        // Modal Elements
+        const customModal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalTitle = document.getElementById('modal-title');
+        const modalIconContainer = document.getElementById('modal-icon-container');
+        const modalIconError = document.getElementById('modal-icon-error');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalVerifyBtn = document.getElementById('modal-verify-btn'); // New button
+
+        // Login & Signup UI elements
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        const loginSubmitBtn = document.getElementById('login-submit-btn');
+        const signupFirstNameInput = document.getElementById('signup-first-name');
+        const signupLastNameInput = document.getElementById('signup-last-name');
+        const signupEmailInput = document.getElementById('signup-email');
+        const signupPasswordInput = document.getElementById('signup-password');
+        const signupSubmitBtn = document.getElementById('signup-submit-btn');
+
+
+        // Show custom modal with a message
+        function showMessage(message, title = 'Alert', type = 'error') {
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+            
+            // Reset modal state
+            modalIconContainer.innerHTML = '';
+            modalIconContainer.className = 'mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10';
+            modalVerifyBtn.classList.add('hidden');
+            modalCloseBtn.classList.remove('hidden');
+
+            if (type === 'error') {
+                modalIconContainer.classList.add('bg-red-100');
+                modalIconContainer.appendChild(modalIconError.cloneNode(true)).classList.add('text-red-600');
+            } else if (type === 'success') {
+                modalIconContainer.classList.add('bg-green-100');
+                // Checkmark icon
+                modalIconContainer.innerHTML = `<svg class="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+            } else if (type === 'verification') {
+                modalIconContainer.classList.add('bg-indigo-100');
+                // Mail icon
+                modalIconContainer.innerHTML = `<svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-19 8a2 2 0 002 2h16a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4z" /></svg>`;
+                modalVerifyBtn.classList.remove('hidden');
+            }
+
+            customModal.classList.remove('hidden');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            customModal.classList.add('hidden');
+        });
+
+        // Function to reload user state and check verification status
+        async function reloadUserAndCheckVerification() {
+            if (auth.currentUser) {
+                try {
+                    // Force a reload to check if the link click updated the state
+                    await reload(auth.currentUser);
+                    // This will trigger onAuthStateChanged with the updated user object
+                    showMessage("Account verification status updated. If verified, features are now unlocked.", "Status Refreshed", "success");
+                } catch (error) {
+                    console.error("Error refreshing user:", error);
+                    showMessage("Failed to refresh verification status. Please ensure you clicked the link.", "Refresh Failed", "error");
+                }
+            }
+            customModal.classList.add('hidden');
+        }
+
+        modalVerifyBtn.addEventListener('click', reloadUserAndCheckVerification);
+
+        // FIX: Added reload and check for user.email to prevent auth/missing-email error
+        resendVerificationBtn.addEventListener('click', async () => {
+            if (auth.currentUser) {
+                try {
+                    // 1. Reload the user to get the freshest state
+                    await reload(auth.currentUser);
+                } catch (e) {
+                    console.warn("Could not reload user status before resend:", e);
+                }
+            }
+            
+            const user = auth.currentUser;
+
+            // 2. Check if user exists, has an email, and is not verified
+            if (user && user.email && !user.emailVerified) {
+                try {
+                    await sendEmailVerification(user);
+                    showMessage("Verification email resent! Please check your inbox.", "Email Resent", "success");
+                } catch (error) {
+                    console.error("Resend error:", error);
+                    showMessage(`Failed to resend email. Error: ${error.message}. Wait a moment and try again.`, "Error Resending", "error");
+                }
+            } else if (user && user.emailVerified) {
+                showMessage("You are already verified.", "Status", "success");
+            } else {
+                showMessage("You are not logged in or your account is missing an email address.", "Status", "error");
+            }
+        });
+
+        // Navigation between pages
+        function showPage(pageId) {
+            mainAppPage.classList.add('hidden');
+            loginPage.classList.add('hidden');
+            signupPage.classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        loginBtn.addEventListener('click', () => showPage('login-page'));
+        signupBtn.addEventListener('click', () => showPage('signup-page'));
+        goToLoginLink.addEventListener('click', (e) => { e.preventDefault(); showPage('login-page'); });
+        goToSignupLink.addEventListener('click', (e) => { e.preventDefault(); showPage('signup-page'); });
+        logoutBtn.addEventListener('click', async () => {
+            if (unsubscribeFromMeals) { unsubscribeFromMeals(); }
+            await signOut(auth);
+            showMessage("You have been logged out.", "Logged Out", "success");
+        });
+
+        // Toggle loading state for meal analysis
+        function setLoading(isLoading) {
+            submitBtn.disabled = isLoading;
+            if (!auth.currentUser || !auth.currentUser.emailVerified) {
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed'); 
+            } else {
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            submitBtn.innerHTML = isLoading ? `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="ml-2">Analyzing...</span>
+            ` : '✨ Analyze Meal';
+            if (isLoading) {
+                loadingIndicator.classList.remove('hidden');
+            } else {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // Toggle loading state for meal plan
+        function setPlanLoading(isLoading) {
+            planBtn.disabled = isLoading;
+            if (!auth.currentUser || !auth.currentUser.emailVerified) {
+                planBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                planBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            planBtn.innerHTML = isLoading ? `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="ml-2">Generating...</span>
+            ` : '✨ Generate Meal Plan';
+            if (isLoading) {
+                planLoadingIndicator.classList.remove('hidden');
+            } else {
+                planLoadingIndicator.classList.add('hidden');
+            }
+        }
+        
+        // Main function to process the user's food entry or image
+        async function processFoodEntry() {
+             if (!auth.currentUser || !auth.currentUser.emailVerified) {
+                showMessage("Please verify your email address to save your analyzed meal and access full tracking features.", "Verification Required");
+                return;
+            }
+
+            const foodItem = foodInput.value.trim();
+            const imageFile = imageInput.files[0];
+
+            if (!foodItem && !imageFile) {
+                showMessage("Please enter a food item or upload a picture to track.");
+                return;
+            }
+
+            setLoading(true);
+            aiResponse.innerHTML = `<span class="text-gray-500 italic">Thinking about your meal...</span>`;
+
+            try {
+                let parts = [];
+                if (foodItem) {
+                    parts.push({ text: `Analyze the following meal: "${foodItem}". Provide a concise nutritional breakdown, including approximate calories, protein, carbs, and fat. Be helpful and informative.` });
+                }
+                
+                if (imageFile) {
+                    const base64Image = await getBase64(imageFile);
+                    parts.push({
+                        inlineData: {
+                            mimeType: imageFile.type,
+                            data: base64Image
+                        }
+                    });
+                    parts.push({ text: "Provide a nutritional breakdown for the food shown in the image, including approximate calories, protein, carbs, and fat. Be helpful and informative."});
+                }
+                
+                const payload = {
+                    contents: [{ parts: parts }],
+                    systemInstruction: {
+                        parts: [{ text: "You are a helpful AI assistant that provides nutritional information for meals. Your responses should be helpful and informative, formatted with clear labels for each nutrient." }]
+                    },
+                };
+
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    aiResponse.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                    // Log the meal to Firestore (only runs for verified users due to early return check)
+                    await logMealToFirestore(foodItem || "Image-based entry", text);
+                    foodInput.value = ''; // Clear input field
+                    imageInput.value = null; // Clear image input
+                } else {
+                    aiResponse.innerText = "Could not generate a response. Please try again.";
+                }
+
+            } catch (error) {
+                console.error("Error during API call:", error);
+                showMessage(`Failed to get a response from the AI. Please check your internet connection and try again.`);
+                aiResponse.innerText = "Error: " + error.message;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Function to log meal to Firestore
+        async function logMealToFirestore(foodItem, analysis) {
+            // Re-check for security
+            if (!db || !userId || !auth.currentUser.emailVerified) {
+                console.error("Attempted to log meal without proper verification.");
+                return;
+            }
+
+            try {
+                const mealsRef = collection(db, `artifacts/${appId}/users/${userId}/meals`);
+                await addDoc(mealsRef, {
+                    meal: foodItem,
+                    analysis: analysis,
+                    timestamp: new Date().toISOString(),
+                });
+            } catch (error) {
+                console.error("Error writing to Firestore:", error);
+                showMessage("Failed to save your meal. Please try again.");
+            }
+        }
+        
+        // Function to generate a meal plan
+        async function generateMealPlan() {
+            if (!auth.currentUser || !auth.currentUser.emailVerified) {
+                showMessage("Please verify your email address to generate a meal plan.", "Verification Required");
+                return;
+            }
+
+            setPlanLoading(true);
+            mealPlanResponseContainer.classList.remove('hidden');
+            mealPlanResponse.innerHTML = `<p class="text-gray-500 italic">Thinking up a plan...</p>`;
+
+            try {
+                const mealsPath = `artifacts/${appId}/users/${userId}/meals`;
+                const q = query(collection(db, mealsPath));
+                const querySnapshot = await getDocs(q);
+                
+                const mealHistory = [];
+                querySnapshot.forEach((doc) => {
+                    mealHistory.push(doc.data().meal);
+                });
+                const recentMeals = mealHistory.slice(-5).join(', ');
+
+                const systemPrompt = `You are an expert meal planner. Based on the provided meal history, create a simple, healthy one-day meal plan. The plan should include breakfast, lunch, dinner, and a snack. List each meal with a brief description. Do not include calorie counts.`;
+                const userQuery = `My recent meal history is: ${recentMeals}. Please generate a simple meal plan for me.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                };
+                
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (text) {
+                    mealPlanResponse.innerHTML = text.replace(/\n/g, '<br>');
+                } else {
+                    mealPlanResponse.innerText = "Could not generate a meal plan. Please try again.";
+                }
+
+            } catch (error) {
+                console.error("Error generating meal plan:", error);
+                showMessage("Failed to generate a meal plan. Please try again.");
+            } finally {
+                setPlanLoading(false);
+            }
+        }
+
+
+        // Function to render meals from Firestore
+        function renderMeals(meals) {
+            mealList.innerHTML = '';
+            
+            // Check if the user is not authenticated (for display purpose)
+            if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                mealList.innerHTML = `<li class="text-center text-gray-500 italic p-4 bg-white rounded-lg shadow-inner">
+                    Login to track and see your personalized meal history.
+                </li>`;
+                return;
+            }
+            
+            // If authenticated but not verified, show a lock message instead of history
+            if (!auth.currentUser.emailVerified) {
+                 mealList.innerHTML = `<li class="text-center text-red-500 font-semibold p-4 bg-white rounded-lg shadow-inner">
+                    Meal History is locked. Please verify your email to view.
+                </li>`;
+                return;
+            }
+
+            if (meals.length === 0) {
+                const li = document.createElement('li');
+                li.className = "text-center text-gray-500 italic";
+                li.innerText = "No meals tracked yet. Add one!";
+                mealList.appendChild(li);
+                return;
+            }
+            meals.forEach(meal => {
+                const li = document.createElement('li');
+                li.className = "bg-white rounded-lg p-4 shadow-md transition-all duration-200 hover:shadow-lg";
+                li.innerHTML = `
+                    <p class="text-sm font-semibold text-gray-800">${meal.meal}</p>
+                    <p class="text-xs text-gray-500 mt-1">${new Date(meal.timestamp).toLocaleString()}</p>
+                    <div class="text-sm text-gray-600 mt-2">${meal.analysis.replace(/\n/g, '<br>')}</div>
+                `;
+                mealList.appendChild(li);
+            });
+        }
+
+        // Event listeners
+        submitBtn.addEventListener('click', processFoodEntry);
+        foodInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                processFoodEntry();
+            }
+        });
+        planBtn.addEventListener('click', generateMealPlan);
+
+        // Sign Up Handler
+        signupSubmitBtn.addEventListener('click', async () => {
+            const firstName = signupFirstNameInput.value.trim();
+            const lastName = signupLastNameInput.value.trim();
+            const email = signupEmailInput.value.trim();
+            const password = signupPasswordInput.value;
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+={}\[\]|\\:;"'<,>.?/~`]).{8,}$/;
+            if (!passwordRegex.test(password)) {
+                showMessage("Password does not meet the requirements: min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character.", "Password Error");
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                // 1. Send verification email
+                await sendEmailVerification(user);
+
+                // 2. Store first and last name in Firestore
+                const userDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/details`);
+                await setDoc(userDocRef, {
+                    firstName,
+                    lastName,
+                    email,
+                    createdAt: new Date().toISOString(),
+                    emailVerified: false // Explicitly set initial state
+                });
+
+                // 3. Show verification prompt (special modal type)
+                showMessage(`Account created for ${email}. Please check your inbox for the verification link. Click the link first, then click "I clicked the link" below.`, "Verification Sent", "verification");
+                
+                // Switch to main app view to wait for verification status change
+                showPage('main-app'); 
+            } catch (error) {
+                console.error("Sign up error:", error);
+                showMessage(error.message, "Sign Up Failed");
+            }
+        });
+
+        // Login Handler
+        loginSubmitBtn.addEventListener('click', async () => {
+            const email = loginEmailInput.value.trim();
+            const password = loginPasswordInput.value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // The onAuthStateChanged listener will handle the page transition and verification check
+                showMessage("Logged in successfully! Checking verification status...", "Success", "success");
+            } catch (error) {
+                console.error("Login error:", error);
+                showMessage(error.message, "Login Failed");
+            }
+        });
+        
+        // Firebase Auth State and Firestore Listener Setup
+        async function setupFirebase() {
+            try {
+                setLogLevel('debug');
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                mealsLoadingIndicator.classList.remove('hidden');
+
+                onAuthStateChanged(auth, async (user) => {
+                    
+                    const isAuthenticatedUser = user && !user.isAnonymous;
+                    let isVerified = false;
+                    
+                    if (isAuthenticatedUser) {
+                        // Reload user state to get the latest verification status from Firebase
+                        try {
+                           await reload(user);
+                           isVerified = user.emailVerified;
+                        } catch (e) {
+                            console.warn("Could not reload user status:", e);
+                            isVerified = false;
+                        }
+                    }
+
+                    if (isAuthenticatedUser && isVerified) {
+                        // Fully Authenticated and VERIFIED
+                        userId = user.uid;
+                        userIdDisplay.innerText = `User ID: ${userId.substring(0, 6)}... (Verified)`;
+                        showPage('main-app');
+                        
+                        // Header buttons
+                        loginBtn.classList.add('hidden');
+                        signupBtn.classList.add('hidden');
+                        logoutBtn.classList.remove('hidden');
+
+                        // Enable features
+                        authRequiredMessage.classList.add('hidden');
+                        verificationPendingMessage.classList.add('hidden');
+                        setLoading(false); 
+                        setPlanLoading(false);
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        planBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                        // Attach Firestore listener
+                        if (unsubscribeFromMeals) {
+                            unsubscribeFromMeals();
+                        }
+                        
+                        const mealsPath = `artifacts/${appId}/users/${userId}/meals`;
+                        const q = query(collection(db, mealsPath));
+
+                        unsubscribeFromMeals = onSnapshot(q, (querySnapshot) => {
+                            mealsLoadingIndicator.classList.add('hidden');
+                            const meals = [];
+                            querySnapshot.forEach((doc) => {
+                                meals.push({ id: doc.id, ...doc.data() });
+                            });
+                            meals.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                            renderMeals(meals);
+                        }, (error) => {
+                            mealsLoadingIndicator.classList.add('hidden');
+                            console.error("Firestore snapshot error:", error);
+                            showMessage("Failed to load meal history.");
+                        });
+
+                    } else if (isAuthenticatedUser && !isVerified) {
+                        // Authenticated but PENDING VERIFICATION
+                        userId = user.uid;
+                        userIdDisplay.innerText = `User ID: ${userId.substring(0, 6)}... (Pending Verification)`;
+                        showPage('main-app');
+
+                        // Header buttons
+                        loginBtn.classList.add('hidden');
+                        signupBtn.classList.add('hidden');
+                        logoutBtn.classList.remove('hidden');
+
+                        // Disable features and show warning
+                        authRequiredMessage.classList.add('hidden');
+                        verificationPendingMessage.classList.remove('hidden');
+                        submitBtn.disabled = true;
+                        planBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed'); 
+                        planBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        mealPlanResponseContainer.classList.add('hidden');
+                        
+                        // Show "locked" meal history message
+                        renderMeals([]); 
+                        if (unsubscribeFromMeals) { unsubscribeFromMeals(); }
+
+                    } else {
+                        // Not Authenticated (Logged Out or Anonymous)
+                        userId = user ? user.uid : null;
+                        
+                        // Handle initial anonymous sign-in or post-logout state
+                        showPage('login-page');
+
+                        // Header buttons
+                        loginBtn.classList.remove('hidden');
+                        signupBtn.classList.remove('hidden');
+                        logoutBtn.classList.add('hidden');
+                        
+                        // Set the requested text for logged out state
+                        signupBtn.innerText = "Sign Up"; 
+                        loginBtn.innerText = "Login";
+
+                        // Disable features and show warning
+                        authRequiredMessage.classList.remove('hidden');
+                        verificationPendingMessage.classList.add('hidden');
+                        userIdDisplay.innerText = "Please log in or sign up to save data.";
+                        submitBtn.disabled = true;
+                        planBtn.disabled = true;
+                        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        planBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        mealPlanResponseContainer.classList.add('hidden');
+
+                        if (unsubscribeFromMeals) { unsubscribeFromMeals(); }
+                        renderMeals([]); // Show the "Login to see history" message
+
+                        // Attempt initial sign-in if no user is present (initial load/post-logout)
+                        try {
+                           if (!user) {
+                               if (initialAuthToken) {
+                                   await signInWithCustomToken(auth, initialAuthToken);
+                               } else {
+                                   // Sign in anonymously for basic visibility of the app UI
+                                   await signInAnonymously(auth);
+                               }
+                           }
+                        } catch (error) {
+                            console.error("Firebase auth error during setup:", error);
+                            showMessage("Failed to authenticate with Firebase.");
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to set up Firebase:", error);
+                showMessage("Failed to initialize Firebase. Please check your configuration.");
+            }
+        }
+
+        window.onload = setupFirebase;
+    </script>
+
+</body>
+</html>
+
+Initial commit of Calorie Tracker app
