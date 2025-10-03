@@ -715,6 +715,12 @@
 
         // Sign Up Handler
         signupSubmitBtn.addEventListener('click', async () => {
+            // FIX: Check if Firebase Auth is ready before proceeding
+            if (!auth) {
+                showMessage("The application is still setting up. Please wait a moment and try again.", "Initialization Pending");
+                return;
+            }
+
             const firstName = signupFirstNameInput.value.trim();
             const lastName = signupLastNameInput.value.trim();
             const email = signupEmailInput.value.trim();
@@ -756,6 +762,12 @@
 
         // Login Handler
         loginSubmitBtn.addEventListener('click', async () => {
+             // FIX: Check if Firebase Auth is ready before proceeding
+            if (!auth) {
+                showMessage("The application is still setting up. Please wait a moment and try again.", "Initialization Pending");
+                return;
+            }
+
             const email = loginEmailInput.value.trim();
             const password = loginPasswordInput.value;
 
@@ -911,10 +923,9 @@
             }
         }
 
-        window.onload = setupFirebase;
+        // Call setupFirebase immediately instead of waiting for window.onload to fix race condition
+        setupFirebase();
     </script>
 
 </body>
 </html>
-
-Initial commit of Calorie Tracker app
