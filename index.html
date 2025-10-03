@@ -110,10 +110,17 @@
 
             // Check if services were initialized (a proxy for correct configuration)
             if (app && auth && db) {
-                updateStatus("SUCCESS: Firebase App, Auth, and Firestore Services Initialized and Config Loaded.");
+                updateStatus("SUCCESS: Firebase App, Auth, and Firestore Services Initialized. Redirecting to the homepage in 3 seconds...");
                 userInfoDiv.classList.remove('hidden');
-                console.log("Firebase services initialized successfully, configuration confirmed.");
+                console.log("Firebase services initialized successfully, configuration confirmed. Redirecting in 3 seconds.");
                 console.warn("NOTE: Authentication sign-in was skipped to prevent the 'auth/admin-restricted-operation' error. The configuration is confirmed to be correct.");
+
+                // Redirect the user after 3 seconds using explicit path construction
+                setTimeout(() => {
+                    // This creates a path like https://user.github.io/repo/index.html, which is typically valid.
+                    const redirectPath = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/index.html';
+                    window.location.href = redirectPath; 
+                }, 3000);
             } else {
                 displayError({ code: 'client/initialization-fail', message: 'Services were not created successfully after calling initializeApp.' });
             }
