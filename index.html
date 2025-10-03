@@ -785,6 +785,19 @@
         async function setupFirebase() {
             try {
                 setLogLevel('debug');
+                
+                // --- DEBUGGING FIREBASE CONFIG START ---
+                // Check for empty config
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("FIREBASE CONFIG ERROR: The __firebase_config variable was not provided or was empty by the environment.");
+                    // Show a specific error message to the user
+                    showMessage("Deployment Configuration Missing. Please ensure the environment variables (__firebase_config) are correctly injected by your hosting provider (GifHub).", "Config Error", "error");
+                    return;
+                }
+                
+                console.log("Firebase Config (should contain keys):", firebaseConfig);
+                // --- DEBUGGING FIREBASE CONFIG END ---
+
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -913,17 +926,18 @@
                            }
                         } catch (error) {
                             console.error("Firebase auth error during setup:", error);
-                            showMessage("Failed to authenticate with Firebase.");
+                            // This error is less critical than config error, so we only log it
                         }
                     }
                 });
             } catch (error) {
                 console.error("Failed to set up Firebase:", error);
-                showMessage("Failed to initialize Firebase. Please check your configuration.");
+                // Fallback catch for other initialization errors
+                showMessage("Failed to initialize Firebase. Please check your configuration.", "Initialization Error");
             }
         }
 
-        // Call setupFirebase immediately instead of waiting for window.onload to fix race condition
+        // Call setupFirebase immediately
         setupFirebase();
     </script>
 
